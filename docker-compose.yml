@@ -1,0 +1,26 @@
+services:
+  # A remote MCP server (HTTP+SSE) built with the official Python SDK.
+  demo-sse:
+    build: .
+    command: ["python", "examples/demo_server.py", "--transport", "sse", "--host", "0.0.0.0", "--port", "8001"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8001), timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # The orchestrator: connects to a local stdio server and to demo-sse, serves the HTTP API.
+  orchestrator:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Optional: enables POST /chat
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # Optional: enables Langfuse tracing (leave empty to run untraced)
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_HOST: ${LANGFUSE_HOST:-https://cloud.langfuse.com}
+    depends_on:
+      demo-sse:
+        condition: service_healthy

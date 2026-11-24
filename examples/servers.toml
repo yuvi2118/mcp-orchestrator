@@ -1,0 +1,14 @@
+# Server definitions for mcp-orchestrator. ${VAR} is expanded from the environment.
+
+[[servers]]
+name = "demo"
+transport = "stdio"
+command = "python"
+args = ["examples/demo_server.py"]
+
+# A remote server over HTTP+SSE (see docker-compose.yml):
+# [[servers]]
+# name = "demo-remote"
+# transport = "sse"
+# url = "http://localhost:8001/sse"
+# headers = { Authorization = "Bearer ${DEMO_TOKEN}" }

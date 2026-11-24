@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Test (with coverage)
+        run: pytest --cov --cov-report=term-missing --cov-fail-under=95
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and smoke-test the compose stack
+        run: |
+          docker compose up -d --build --wait
+          curl --fail --silent http://localhost:8000/healthz
+          curl --fail --silent -X POST http://localhost:8000/tools/remote__add/call \
+            -H 'content-type: application/json' -d '{"arguments": {"a": 2, "b": 3}}'
+          docker compose down
